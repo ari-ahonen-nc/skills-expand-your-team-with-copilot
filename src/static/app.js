@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
+  const SCHOOL_NAME = "Mergington High School";
 
   // Activity categories with corresponding colors
   const activityTypes = {
@@ -308,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
       activityName
     )}`;
-    const shareText = `Check out ${activityName} at Mergington High School (${formattedSchedule}).`;
+    const shareText = `Check out ${activityName} at ${SCHOOL_NAME} (${formattedSchedule}).`;
 
     return { shareUrl, shareText };
   }
@@ -654,25 +655,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const copyShareButton = activityCard.querySelector(".copy-share-button");
     copyShareButton.addEventListener("click", async () => {
+      copyShareButton.disabled = true;
+      let copiedWithClipboard = false;
+
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(shareUrl);
           showMessage("Share link copied to clipboard.", "success");
-          return;
+          copiedWithClipboard = true;
         }
       } catch (error) {
         console.error("Error copying share link:", error);
       }
 
-      const fallbackInput = document.createElement("input");
-      fallbackInput.value = shareUrl;
-      fallbackInput.setAttribute("readonly", "");
-      fallbackInput.style.position = "absolute";
-      fallbackInput.style.left = "-9999px";
-      document.body.appendChild(fallbackInput);
-      fallbackInput.select();
+      if (copiedWithClipboard) {
+        copyShareButton.disabled = false;
+        return;
+      }
 
+      let fallbackInput = null;
       try {
+        fallbackInput = document.createElement("input");
+        fallbackInput.value = shareUrl;
+        fallbackInput.setAttribute("readonly", "");
+        fallbackInput.style.position = "absolute";
+        fallbackInput.style.left = "-9999px";
+        document.body.appendChild(fallbackInput);
+        fallbackInput.select();
+
         const copied = document.execCommand("copy");
         if (copied) {
           showMessage("Share link copied to clipboard.", "success");
@@ -683,7 +693,10 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Fallback copy failed:", error);
         showMessage("Couldn't copy link. Please copy it manually.", "error");
       } finally {
-        document.body.removeChild(fallbackInput);
+        if (fallbackInput) {
+          document.body.removeChild(fallbackInput);
+        }
+        copyShareButton.disabled = false;
       }
     });
 
