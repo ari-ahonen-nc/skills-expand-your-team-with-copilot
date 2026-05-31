@@ -304,6 +304,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function buildShareContent(activityName, formattedSchedule) {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
+      activityName
+    )}`;
+    const shareText = `Check out ${activityName} at Mergington High School (${formattedSchedule}).`;
+
+    return { shareUrl, shareText };
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -498,6 +507,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Format the schedule using the new helper function
     const formattedSchedule = formatSchedule(details);
+    const { shareUrl, shareText } = buildShareContent(name, formattedSchedule);
+    const encodedShareUrl = encodeURIComponent(shareUrl);
+    const encodedShareText = encodeURIComponent(shareText);
 
     // Create activity tag
     const tagHtml = `
@@ -552,6 +564,47 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions">
+        <span class="share-label">Share:</span>
+        <a
+          class="share-button share-facebook"
+          href="https://www.facebook.com/sharer/sharer.php?u=${encodedShareUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on Facebook"
+          title="Share on Facebook"
+        >
+          Facebook
+        </a>
+        <a
+          class="share-button share-x"
+          href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${encodedShareUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on X"
+          title="Share on X"
+        >
+          X
+        </a>
+        <a
+          class="share-button share-whatsapp"
+          href="https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on WhatsApp"
+          title="Share on WhatsApp"
+        >
+          WhatsApp
+        </a>
+        <button
+          type="button"
+          class="share-button copy-share-button"
+          aria-label="Copy share link for ${name}"
+          title="Copy share link"
+        >
+          Copy Link
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -586,6 +639,37 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const copyShareButton = activityCard.querySelector(".copy-share-button");
+    copyShareButton.addEventListener("click", async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          showMessage("Share link copied to clipboard.", "success");
+          return;
+        }
+      } catch (error) {
+        console.error("Error copying share link:", error);
+      }
+
+      const fallbackInput = document.createElement("input");
+      fallbackInput.value = shareUrl;
+      fallbackInput.setAttribute("readonly", "");
+      fallbackInput.style.position = "absolute";
+      fallbackInput.style.left = "-9999px";
+      document.body.appendChild(fallbackInput);
+      fallbackInput.select();
+
+      try {
+        document.execCommand("copy");
+        showMessage("Share link copied to clipboard.", "success");
+      } catch (error) {
+        console.error("Fallback copy failed:", error);
+        showMessage("Couldn't copy link. Please copy it manually.", "error");
+      } finally {
+        document.body.removeChild(fallbackInput);
+      }
+    });
 
     activitiesList.appendChild(activityCard);
   }
