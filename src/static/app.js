@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDarkMode = currentTheme === "dark";
     document.body.classList.toggle("dark-mode", isDarkMode);
     themeToggleIcon.textContent = isDarkMode ? "☀️" : "🌙";
-    themeToggleLabel.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+    themeToggleLabel.textContent = isDarkMode ? "Theme: Dark" : "Theme: Light";
     themeToggleButton.setAttribute("aria-pressed", String(isDarkMode));
     localStorage.setItem("theme", currentTheme);
   }
@@ -882,7 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
-  applyTheme(localStorage.getItem("theme"));
+  applyTheme(localStorage.getItem("theme") || "light");
   checkAuthentication();
   initializeFilters();
   fetchActivities();
