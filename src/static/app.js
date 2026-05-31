@@ -313,6 +313,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return { shareUrl, shareText };
   }
 
+  function initializeSharedActivityFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedActivity = params.get("activity");
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    searchQuery = sharedActivity;
+    searchInput.value = sharedActivity;
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -661,8 +673,12 @@ document.addEventListener("DOMContentLoaded", () => {
       fallbackInput.select();
 
       try {
-        document.execCommand("copy");
-        showMessage("Share link copied to clipboard.", "success");
+        const copied = document.execCommand("copy");
+        if (copied) {
+          showMessage("Share link copied to clipboard.", "success");
+        } else {
+          showMessage("Couldn't copy link. Please copy it manually.", "error");
+        }
       } catch (error) {
         console.error("Fallback copy failed:", error);
         showMessage("Couldn't copy link. Please copy it manually.", "error");
@@ -948,5 +964,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize app
   checkAuthentication();
   initializeFilters();
+  initializeSharedActivityFromUrl();
   fetchActivities();
 });
