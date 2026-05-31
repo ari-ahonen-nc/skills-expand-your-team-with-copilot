@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
+  const SCHOOL_NAME = "Mergington High School";
 
   // Activity categories with corresponding colors
   const activityTypes = {
@@ -326,6 +327,27 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function buildShareContent(activityName, formattedSchedule) {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
+      activityName
+    )}`;
+    const shareText = `Check out ${activityName} at ${SCHOOL_NAME} (${formattedSchedule}).`;
+
+    return { shareUrl, shareText };
+  }
+
+  function initializeSharedActivityFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedActivity = params.get("activity");
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    searchQuery = sharedActivity;
+    searchInput.value = sharedActivity;
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -533,6 +555,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Format the schedule using the new helper function
     const formattedSchedule = formatSchedule(details);
+    const { shareUrl, shareText } = buildShareContent(name, formattedSchedule);
+    const encodedShareUrl = encodeURIComponent(shareUrl);
+    const encodedShareText = encodeURIComponent(shareText);
 
     // Create activity tag
     const tagHtml = `
@@ -587,6 +612,47 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions">
+        <span class="share-label">Share:</span>
+        <a
+          class="share-button share-facebook"
+          href="https://www.facebook.com/sharer/sharer.php?u=${encodedShareUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on Facebook"
+          title="Share on Facebook"
+        >
+          Facebook
+        </a>
+        <a
+          class="share-button share-x"
+          href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${encodedShareUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on X"
+          title="Share on X"
+        >
+          X
+        </a>
+        <a
+          class="share-button share-whatsapp"
+          href="https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on WhatsApp"
+          title="Share on WhatsApp"
+        >
+          WhatsApp
+        </a>
+        <button
+          type="button"
+          class="share-button copy-share-button"
+          aria-label="Copy share link for ${name}"
+          title="Copy share link"
+        >
+          Copy Link
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -621,6 +687,53 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const copyShareButton = activityCard.querySelector(".copy-share-button");
+    copyShareButton.addEventListener("click", async () => {
+      copyShareButton.disabled = true;
+      let copiedWithClipboard = false;
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          showMessage("Share link copied to clipboard.", "success");
+          copiedWithClipboard = true;
+        }
+      } catch (error) {
+        console.error("Error copying share link:", error);
+      }
+
+      if (copiedWithClipboard) {
+        copyShareButton.disabled = false;
+        return;
+      }
+
+      let fallbackInput = null;
+      try {
+        fallbackInput = document.createElement("input");
+        fallbackInput.value = shareUrl;
+        fallbackInput.setAttribute("readonly", "");
+        fallbackInput.style.position = "absolute";
+        fallbackInput.style.left = "-9999px";
+        document.body.appendChild(fallbackInput);
+        fallbackInput.select();
+
+        const copied = document.execCommand("copy");
+        if (copied) {
+          showMessage("Share link copied to clipboard.", "success");
+        } else {
+          showMessage("Couldn't copy link. Please copy it manually.", "error");
+        }
+      } catch (error) {
+        console.error("Fallback copy failed:", error);
+        showMessage("Couldn't copy link. Please copy it manually.", "error");
+      } finally {
+        if (fallbackInput) {
+          document.body.removeChild(fallbackInput);
+        }
+        copyShareButton.disabled = false;
+      }
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -913,5 +1026,6 @@ document.addEventListener("DOMContentLoaded", () => {
   applyTheme(localStorage.getItem("theme") || "light");
   checkAuthentication();
   initializeFilters();
+  initializeSharedActivityFromUrl();
   fetchActivities();
 });
